@@ -5,6 +5,15 @@ const question = document.querySelector('.question');
 let yesScale = 1;
 let clickCount = 0;
 
+// Support both click and touch events for mobile
+function addTouchSupport(element, handler) {
+    element.addEventListener('click', handler);
+    element.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handler(e);
+    });
+}
+
 const noMessages = [
     "Are you sure?",
     "no creo",
@@ -18,7 +27,25 @@ const noMessages = [
     "bueno then click no....."
 ];
 
-noBtn.addEventListener('click', () => {
+function getRandomPosition() {
+    // Get safe area dimensions accounting for mobile browser UI
+    const margin = 60; // Keep button away from edges
+    const btnWidth = noBtn.offsetWidth || 120;
+    const btnHeight = noBtn.offsetHeight || 50;
+    
+    const maxWidth = window.innerWidth - btnWidth - margin;
+    const maxHeight = window.innerHeight - btnHeight - margin;
+    
+    const randomX = Math.random() * maxWidth + (margin / 2);
+    const randomY = Math.random() * maxHeight + (margin / 2);
+    
+    return {
+        top: randomY + 'px',
+        left: randomX + 'px'
+    };
+}
+
+addTouchSupport(noBtn, () => {
     clickCount++;
 
     // Increase the Yes button size exponentially - much bigger growth
@@ -31,62 +58,44 @@ noBtn.addEventListener('click', () => {
         question.textContent = "IG BRO";
     }
 
-    // Move No button to a random corner/edge position
-    const positions = [
-        { top: '10px', left: '10px' },
-        { top: '10px', right: '10px' },
-        { bottom: '10px', left: '10px' },
-        { bottom: '10px', right: '10px' },
-        { top: '10px', left: '50%', transform: 'translateX(-50%)' },
-        { bottom: '10px', left: '50%', transform: 'translateX(-50%)' },
-        { top: '50%', left: '10px', transform: 'translateY(-50%)' },
-        { top: '50%', right: '10px', transform: 'translateY(-50%)' }
-    ];
-    
-    const randomPos = positions[Math.floor(Math.random() * positions.length)];
+    // Move No button to a random position (mobile-safe)
+    const randomPos = getRandomPosition();
     noBtn.style.position = 'fixed';
     noBtn.style.zIndex = '999';
     noBtn.style.transition = 'all 0.3s ease';
-    
-    // Clear previous position properties
-    noBtn.style.top = '';
-    noBtn.style.bottom = '';
-    noBtn.style.left = '';
+    noBtn.style.top = randomPos.top;
+    noBtn.style.left = randomPos.left;
     noBtn.style.right = '';
-    
-    // Apply new position
-    Object.keys(randomPos).forEach(key => {
-        if (key !== 'transform') {
-            noBtn.style[key] = randomPos[key];
-        }
-    });
+    noBtn.style.bottom = '';
     
     // Shrink the No button over time
-    const noScale = Math.max(0.2, 1 - (clickCount * 0.07));
+    const noScale = Math.max(0.3, 1 - (clickCount * 0.07));
     noBtn.style.transform = `scale(${noScale})`;
-    noBtn.style.opacity = Math.max(0.2, 1 - (clickCount * 0.08));
+    noBtn.style.opacity = Math.max(0.3, 1 - (clickCount * 0.08));
 
     // Make Yes button cover more of the screen
     if (yesScale > 3) {
         yesBtn.style.position = 'fixed';
         yesBtn.style.top = '50%';
         yesBtn.style.left = '50%';
-        yesBtn.style.transform = `translate(-50%, -50%) scale(${yesScale})`;
+        yesBtn.style.transform = `translate(-50%, -50%) scale(${Math.min(yesScale, 8)})`;
         yesBtn.style.zIndex = '1000';
     }
     
     // After all messages shown, make Yes take over completely
     if (clickCount >= noMessages.length) {
-        yesScale = 25;
         yesBtn.style.position = 'fixed';
         yesBtn.style.top = '50%';
         yesBtn.style.left = '50%';
-        yesBtn.style.transform = `translate(-50%, -50%) scale(${yesScale})`;
+        yesBtn.style.transform = 'translate(-50%, -50%)';
         yesBtn.style.zIndex = '1000';
-        yesBtn.style.width = '200vw';
-        yesBtn.style.height = '200vh';
-        yesBtn.style.padding = '50px 100px';
-        yesBtn.style.fontSize = '4rem';
+        yesBtn.style.width = '100vw';
+        yesBtn.style.height = '100vh';
+        yesBtn.style.padding = '20px';
+        yesBtn.style.fontSize = 'clamp(2rem, 10vw, 4rem)';
+        yesBtn.style.borderRadius = '0';
+        yesBtn.style.maxWidth = 'none';
+        yesBtn.style.minWidth = '0';
         
         // Hide the No button after last message
         setTimeout(() => {
@@ -95,11 +104,11 @@ noBtn.addEventListener('click', () => {
     }
 });
 
-yesBtn.addEventListener('click', () => {
+addTouchSupport(yesBtn, () => {
     // Celebration!
     document.body.style.background = '#0a0a0a';
     question.textContent = "yayyyy🥺🥺";
-    question.style.fontSize = "3rem";
+    question.style.fontSize = "clamp(2rem, 8vw, 3rem)";
     question.style.color = "#ffffff";
     question.style.textShadow = "0 0 20px rgba(178, 34, 34, 0.8)";
     
@@ -114,7 +123,7 @@ yesBtn.addEventListener('click', () => {
     setTimeout(() => {
         const msg = document.createElement('p');
         msg.textContent = "Ntp you wont regret......";
-        msg.style.cssText = 'color: #b22222; font-size: 1.5rem; margin-top: 20px; animation: fadeIn 1s ease-in; text-shadow: 0 0 10px rgba(178, 34, 34, 0.5);';
+        msg.style.cssText = 'color: #b22222; font-size: clamp(1.2rem, 5vw, 1.5rem); margin-top: 20px; animation: fadeIn 1s ease-in; text-shadow: 0 0 10px rgba(178, 34, 34, 0.5);';
         document.querySelector('.container').appendChild(msg);
     }, 1000);
 });
@@ -141,3 +150,20 @@ function createHearts() {
         }, i * 100);
     }
 }
+
+// Prevent double-tap zoom on iOS
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
+
+// Handle orientation change
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+    }, 100);
+});
