@@ -48,8 +48,13 @@ function getRandomPosition() {
 addTouchSupport(noBtn, () => {
     clickCount++;
 
-    // Increase the Yes button size exponentially - much bigger growth
-    yesScale += 1 + (clickCount * 0.8);
+    // Reduce growth rate on mobile devices
+    const isMobile = window.innerWidth <= 480;
+    const growthFactor = isMobile ? 0.1 : 0.2;
+    const baseGrowth = isMobile ? 0.1 : 0.3;
+    
+    // Increase the Yes button size - slower growth on mobile
+    yesScale += baseGrowth + (clickCount * growthFactor);
     
     // Update the question text with playful messages
     if (clickCount <= noMessages.length) {
@@ -78,7 +83,7 @@ addTouchSupport(noBtn, () => {
         yesBtn.style.position = 'fixed';
         yesBtn.style.top = '50%';
         yesBtn.style.left = '50%';
-        yesBtn.style.transform = `translate(-50%, -50%) scale(${Math.min(yesScale, 8)})`;
+        yesBtn.style.transform = `translate(-50%, -50%) scale(${Math.min(yesScale, 4)})`;
         yesBtn.style.zIndex = '1000';
     }
     
